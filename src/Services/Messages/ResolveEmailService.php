@@ -6,6 +6,7 @@ use Exception;
 use Sendportal\Base\Models\EmailService;
 use Sendportal\Base\Models\Message;
 use Sendportal\Base\Repositories\Campaigns\CampaignTenantRepositoryInterface;
+use Sendportal\Base\Repositories\EmailServiceTenantRepository;
 use Sendportal\Pro\Repositories\AutomationScheduleRepository;
 
 class ResolveEmailService
@@ -13,9 +14,16 @@ class ResolveEmailService
     /** @var CampaignTenantRepositoryInterface */
     protected $campaignTenantRepository;
 
-    public function __construct(CampaignTenantRepositoryInterface $campaignTenantRepository)
+    /** @var EmailServiceTenantRepository */
+    protected $emailServiceRepository;
+
+    public function __construct(
+        CampaignTenantRepositoryInterface $campaignTenantRepository,
+        EmailServiceTenantRepository $emailServiceTenantRepository
+    )
     {
         $this->campaignTenantRepository = $campaignTenantRepository;
+        $this->emailServiceRepository = $emailServiceTenantRepository;
     }
 
     /**
@@ -29,6 +37,10 @@ class ResolveEmailService
 
         if ($message->isCampaign()) {
             return $this->resolveCampaignEmailService($message);
+        }
+
+        if ($message->isConfirmation()) {
+            return $this->resolveConfirmationEmailService($message);
         }
 
         throw new Exception('Unable to resolve email service for message id=' . $message->id);
@@ -72,6 +84,23 @@ class ResolveEmailService
 
         if (! $emailService = $campaign->email_service) {
             throw new Exception('Unable to resolve email service for message id=' . $message->id);
+        }
+
+        return $emailService;
+    }
+
+    /**
+     * Resolve the provider for a registration confirmation
+     *
+     * @param Message $message
+     * @return EmailService
+     * @throws Exception
+     */
+    protected function resolveConfirmationEmailService(Message $message): EmailService
+    {
+        // XXX handle failure better
+        if (! $emailService = $this->emailServiceRepository->all($message->workspace_id)->first()) {
+            throw new Exception('Unable to find email service for message id=' . $message->id);
         }
 
         return $emailService;

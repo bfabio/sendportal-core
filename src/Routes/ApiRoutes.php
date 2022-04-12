@@ -49,6 +49,8 @@ class ApiRoutes
             });
 
             $this->get('v1/ping', '\Sendportal\Base\Http\Controllers\Api\PingController@index');
+            $this->post('v1/subscribe', '\Sendportal\Base\Http\Controllers\Api\SubscribeController@subscribe');
+            $this->post('v1/confirm-subscribe', '\Sendportal\Base\Http\Controllers\Api\SubscribeController@confirm');
         };
     }
 }

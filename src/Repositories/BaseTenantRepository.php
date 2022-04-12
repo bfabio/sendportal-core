@@ -115,6 +115,31 @@ abstract class BaseTenantRepository implements BaseTenantInterface
     }
 
     /**
+     * XXX doc
+     *
+     * @param int $workspaceId
+     * @param array $parameters
+     * @param array $values
+     * @return mixed
+     * @throws Exception
+     */
+    public function getOrCreate($workspaceId, $attributes, $values = [])
+    {
+        $instance = $this->getQueryBuilder($workspaceId);
+
+        foreach ($attributes as $field => $value) {
+            $instance->where($field, $value);
+        }
+
+        return $instance->firstOr(function() use ($attributes, $values, $workspaceId) {
+            $this->checkTenantData($attributes);
+            $vals = array_merge($attributes, $values);
+
+            return $this->executeSave($workspaceId, $this->getNewInstance(), $vals);
+        });
+    }
+
+    /**
      * List all records
      *
      * @param int $workspaceId

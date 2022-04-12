@@ -141,6 +141,16 @@ class Message extends BaseModel
     }
 
     /**
+     * Determine if this the registration confirmation message
+     *
+     * @return bool
+     */
+    public function isConfirmation(): bool
+    {
+        return strpos($this->hash, 'confirmation-') === 0;
+    }
+
+    /**
      * Return the string for the source_type.
      *
      * @return string|null

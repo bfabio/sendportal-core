@@ -24,6 +24,8 @@ class MessageTrackingOptions
 
         if ($message->source && get_class($message->source) === Campaign::class) {
             return static::fromCampaign($message->source);
+        } else if ($message->isConfirmation()) {
+            return (new static)->disable();
         }
 
         return $trackingOptions;

@@ -7,6 +7,7 @@ namespace Sendportal\Base\Services\Content;
 use Exception;
 use Sendportal\Base\Models\Campaign;
 use Sendportal\Base\Models\Message;
+use Sendportal\Base\Repositories\TemplateTenantRepository;
 use Sendportal\Base\Repositories\Campaigns\CampaignTenantRepositoryInterface;
 use Sendportal\Base\Traits\NormalizeTags;
 use Sendportal\Pro\Repositories\AutomationScheduleRepository;
@@ -19,14 +20,19 @@ class MergeContentService
     /** @var CampaignTenantRepositoryInterface */
     protected $campaignRepo;
 
+    /** @var TemplateTenantRepository */
+    protected $templateRepo;
+
     /** @var CssToInlineStyles */
     protected $cssProcessor;
 
     public function __construct(
         CampaignTenantRepositoryInterface $campaignRepo,
+        TemplateTenantRepository $templateRepo,
         CssToInlineStyles $cssProcessor
     ) {
         $this->campaignRepo = $campaignRepo;
+        $this->templateRepo = $templateRepo;
         $this->cssProcessor = $cssProcessor;
     }
 
@@ -47,6 +53,9 @@ class MergeContentService
             $mergedContent = $this->mergeCampaignContent($message);
         } elseif ($message->isAutomation()) {
             $mergedContent = $this->mergeAutomationContent($message);
+        } elseif ($message->isConfirmation()) {
+            $content = $this->mergeSubscriberHash($this->getConfirmationContent($message), $message);
+            return $this->mergeSubscriberTags($content, $message);
         } else {
             throw new Exception('Invalid message source type for message id=' . $message->id);
         }
@@ -91,6 +100,24 @@ class MergeContentService
         return $this->mergeContent($content, $template->content);
     }
 
+    /**
+     * @throws Exception
+     */
+    protected function getConfirmationContent(Message $message): string
+    {
+        // XXX parametrize
+        /** @var Template $template */
+        $template = $this->templateRepo->findBy($message->workspace_id, 'name', 'confirmation-template');
+        /* $template = $this->templateRepo->all($message->workspace_id)->first(); */
+
+        /* // XXX precompiled default template? */
+        /* if (!$template) { */
+        /*     throw new Exception('Unable to resolve confirmation template step for message id= ' . $message->id); */
+        /* } */
+
+        return $template->content;
+    }
+
     protected function mergeContent(?string $customContent, string $templateContent): string
     {
         return str_ireplace(['{{content}}', '{{ content }}'], $customContent ?: '', $templateContent);
@@ -133,7 +160,7 @@ class MergeContentService
         ];
 
         foreach ($tags as $key => $replace) {
-            $content = str_ireplace('{{' . $key . '}}', $replace, $content);
+            $content = str_ireplace(["{{ $key }}", "{{$key}}"], $replace, $content);
         }
 
         return $content;
@@ -145,6 +172,7 @@ class MergeContentService
 
         return str_ireplace(['{{ unsubscribe_url }}', '{{unsubscribe_url}}'], $unsubscribeLink, $content);
     }
+
 
     protected function generateUnsubscribeLink(Message $message): string
     {
@@ -161,6 +189,11 @@ class MergeContentService
     protected function generateWebviewLink(Message $message): string
     {
         return route('sendportal.webview.show', $message->hash);
+    }
+
+    protected function mergeSubscriberHash(string $content, Message $message): string
+    {
+        return str_ireplace(['{{ subscriber_hash }}', '{{subscriber_hash}}'], $message->subscriber->hash, $content);
     }
 
     protected function inlineStyles(string $content): string
