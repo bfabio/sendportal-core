@@ -92,9 +92,9 @@ class DispatchConfirmationMessage
             'workspace_id' => $workspaceId,
             'recipient_email' => $recipientEmail,
             // XXX parametrize
-            'subject' => 'Confirm registration to our mailing list',
+            'subject' => 'Conferma la registrazione',
             // XXX parametrize
-            'from_name' => 'Developer & Designers Italia mailing list',
+            'from_name' => 'Developers e Designers Italia',
             // XXX parametrize
             'from_email' => 'no-reply@developers.italia.it',
             'hash' => 'confirmation-' . Uuid::uuid4()->toString()
