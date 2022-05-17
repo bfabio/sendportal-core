@@ -14,6 +14,7 @@ class SubscriberConfirmRequest extends FormRequest
             'email' => ['required', 'email'],
             'hash' => ['required'],
             'workspace_id' => ['required'],
+            'tag_id' => ['nullable', 'integer'],
         ];
     }
 }

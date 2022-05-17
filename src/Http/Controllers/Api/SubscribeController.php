@@ -77,6 +77,10 @@ class SubscribeController extends Controller
         );
         if ($subscriber) {
             $subscriber->unsubscribed_at = null;
+
+            if (array_key_exists('tag_id', $data)) {
+                $this->subscribers->syncTags($subscriber, [$data['tag_id']]);
+            }
             $subscriber->save();
 
             // XXX add event
