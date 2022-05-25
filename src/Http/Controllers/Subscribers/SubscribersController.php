@@ -40,9 +40,11 @@ class SubscribersController extends Controller
      */
     public function index(): View
     {
+        $this->subscriberRepo->setOrderDirection('desc');
+
         $subscribers = $this->subscriberRepo->paginate(
             Sendportal::currentWorkspaceId(),
-            'email',
+            'created_at',
             ['tags'],
             50,
             request()->all()
